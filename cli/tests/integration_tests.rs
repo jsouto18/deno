@@ -1416,6 +1416,226 @@ fn test_permissions_without_allow() {
   }
 }
 
+#[test]
+fn test_complex_permissions_inside_project_dir() {
+  const PERMISSION_VARIANTS: [&str; 2] = ["read", "write"];
+  for permission in &PERMISSION_VARIANTS {
+    let (_, err, code) = util::run_and_collect_output(
+      &format!(
+        "run --allow-{0}={1} complex_permissions_test.ts {0} {2} {2}",
+        permission,
+        util::root_path().into_os_string().into_string().unwrap(),
+        "complex_permissions_test.ts"
+      ),
+      None,
+      None,
+    );
+    assert_eq!(code, 0);
+    assert!(!err.contains(util::PERMISSION_DENIED_PATTERN));
+  }
+}
+
+#[test]
+fn test_complex_permissions_outside_test_dir() {
+  const PERMISSION_VARIANTS: [&str; 2] = ["read", "write"];
+  for permission in &PERMISSION_VARIANTS {
+    let (_, err, code) = util::run_and_collect_output(
+      &format!(
+        "run --allow-{0}={1} complex_permissions_test.ts {0} {2}",
+        permission,
+        util::root_path()
+          .join("cli")
+          .join("tests")
+          .into_os_string()
+          .into_string()
+          .unwrap(),
+        util::root_path()
+          .join("Cargo.toml")
+          .into_os_string()
+          .into_string()
+          .unwrap(),
+      ),
+      None,
+      None,
+    );
+    assert_eq!(code, 1);
+    assert!(err.contains(util::PERMISSION_DENIED_PATTERN));
+  }
+}
+
+#[test]
+fn test_complex_permissions_inside_test_dir() {
+  const PERMISSION_VARIANTS: [&str; 2] = ["read", "write"];
+  for permission in &PERMISSION_VARIANTS {
+    let (_, err, code) = util::run_and_collect_output(
+      &format!(
+        "run --allow-{0}={1} complex_permissions_test.ts {0} {2}",
+        permission,
+        util::root_path()
+          .join("cli")
+          .join("tests")
+          .into_os_string()
+          .into_string()
+          .unwrap(),
+        "complex_permissions_test.ts"
+      ),
+      None,
+      None,
+    );
+    assert_eq!(code, 0);
+    assert!(!err.contains(util::PERMISSION_DENIED_PATTERN));
+  }
+}
+
+#[test]
+fn test_complex_permissions_outside_test_and_js_dir() {
+  const PERMISSION_VARIANTS: [&str; 2] = ["read", "write"];
+  let test_dir = util::root_path()
+    .join("cli")
+    .join("tests")
+    .into_os_string()
+    .into_string()
+    .unwrap();
+  let js_dir = util::root_path()
+    .join("js")
+    .into_os_string()
+    .into_string()
+    .unwrap();
+  for permission in &PERMISSION_VARIANTS {
+    let (_, err, code) = util::run_and_collect_output(
+      &format!(
+        "run --allow-{0}={1},{2} complex_permissions_test.ts {0} {3}",
+        permission,
+        test_dir,
+        js_dir,
+        util::root_path()
+          .join("Cargo.toml")
+          .into_os_string()
+          .into_string()
+          .unwrap(),
+      ),
+      None,
+      None,
+    );
+    assert_eq!(code, 1);
+    assert!(err.contains(util::PERMISSION_DENIED_PATTERN));
+  }
+}
+
+#[test]
+fn test_complex_permissions_inside_test_and_js_dir() {
+  const PERMISSION_VARIANTS: [&str; 2] = ["read", "write"];
+  let test_dir = util::root_path()
+    .join("cli")
+    .join("tests")
+    .into_os_string()
+    .into_string()
+    .unwrap();
+  let js_dir = util::root_path()
+    .join("js")
+    .into_os_string()
+    .into_string()
+    .unwrap();
+  for permission in &PERMISSION_VARIANTS {
+    let (_, err, code) = util::run_and_collect_output(
+      &format!(
+        "run --allow-{0}={1},{2} complex_permissions_test.ts {0} {3}",
+        permission, test_dir, js_dir, "complex_permissions_test.ts"
+      ),
+      None,
+      None,
+    );
+    assert_eq!(code, 0);
+    assert!(!err.contains(util::PERMISSION_DENIED_PATTERN));
+  }
+}
+
+#[test]
+fn test_complex_permissions_relative() {
+  const PERMISSION_VARIANTS: [&str; 2] = ["read", "write"];
+  for permission in &PERMISSION_VARIANTS {
+    let (_, err, code) = util::run_and_collect_output(
+      &format!(
+				"run --allow-{0}=. complex_permissions_test.ts {0} complex_permissions_test.ts",
+				permission
+			),
+      None,
+      None,
+    );
+    assert_eq!(code, 0);
+    assert!(!err.contains(util::PERMISSION_DENIED_PATTERN));
+  }
+}
+
+#[test]
+fn test_complex_permissions_no_prefix() {
+  const PERMISSION_VARIANTS: [&str; 2] = ["read", "write"];
+  for permission in &PERMISSION_VARIANTS {
+    let (_, err, code) = util::run_and_collect_output(
+			&format!(
+				"run --allow-{0}=tls/../ complex_permissions_test.ts {0} complex_permissions_test.ts",
+				permission
+			),
+			None,
+			None,
+		);
+    assert_eq!(code, 0);
+    assert!(!err.contains(util::PERMISSION_DENIED_PATTERN));
+  }
+}
+
+#[test]
+fn test_complex_permissions_net_allow_localhost_4545() {
+  let http_guard = Some(util::http_server());
+  let (_, err, code) = util::run_and_collect_output(
+			"run --allow-net=localhost:4545 complex_permissions_test.ts netFetch complex_permissions_test.ts http://localhost:4545/",
+			None,
+			None,
+		);
+  drop(http_guard);
+  assert_eq!(code, 0);
+  assert!(!err.contains(util::PERMISSION_DENIED_PATTERN));
+}
+
+#[test]
+fn test_complex_permissions_net_allow_deno_land() {
+  let http_guard = Some(util::http_server());
+  let (_, err, code) = util::run_and_collect_output(
+			"run --allow-net=deno.land complex_permissions_test.ts netFetch complex_permissions_test.ts http://localhost:4545/",
+			None,
+			None,
+		);
+  drop(http_guard);
+  assert_eq!(code, 1);
+  assert!(err.contains(util::PERMISSION_DENIED_PATTERN));
+}
+
+#[test]
+fn test_complex_permissions_net_localhost() {
+  let http_guard = Some(util::http_server());
+  let (_, err, code) = util::run_and_collect_output(
+			"run --allow-net=localhost complex_permissions_test.ts netFetch complex_permissions_test.ts http://localhost:4545/ http://localhost:4546/ http://localhost:4547/",
+			None,
+			None,
+		);
+  drop(http_guard);
+  assert_eq!(code, 1);
+  assert!(err.contains(util::PERMISSION_DENIED_PATTERN));
+}
+
+#[test]
+fn test_complex_permissions_net_localhost_4545_fail() {
+  let http_guard = Some(util::http_server());
+  let (_, err, code) = util::run_and_collect_output(
+			"run --allow-net=localhost:4545 complex_permissions_test.ts netFetch complex_permissions_test.ts http://localhost:4546/",
+			None,
+			None,
+		);
+  drop(http_guard);
+  assert_eq!(code, 1);
+  assert!(err.contains(util::PERMISSION_DENIED_PATTERN));
+}
+
 mod util {
   use deno::colors::strip_ansi_codes;
   pub use deno::test_util::*;
