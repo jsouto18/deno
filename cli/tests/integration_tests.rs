@@ -1417,7 +1417,7 @@ fn test_permissions_without_allow() {
 }
 
 #[test]
-fn test_complex_permissions_inside_project_dir() {
+fn test_complex_permissions_rw_inside_project_dir() {
   const PERMISSION_VARIANTS: [&str; 2] = ["read", "write"];
   for permission in &PERMISSION_VARIANTS {
     let (_, err, code) = util::run_and_collect_output(
@@ -1436,7 +1436,7 @@ fn test_complex_permissions_inside_project_dir() {
 }
 
 #[test]
-fn test_complex_permissions_outside_test_dir() {
+fn test_complex_permissions_rw_outside_test_dir() {
   const PERMISSION_VARIANTS: [&str; 2] = ["read", "write"];
   for permission in &PERMISSION_VARIANTS {
     let (_, err, code) = util::run_and_collect_output(
@@ -1464,7 +1464,7 @@ fn test_complex_permissions_outside_test_dir() {
 }
 
 #[test]
-fn test_complex_permissions_inside_test_dir() {
+fn test_complex_permissions_rw_inside_test_dir() {
   const PERMISSION_VARIANTS: [&str; 2] = ["read", "write"];
   for permission in &PERMISSION_VARIANTS {
     let (_, err, code) = util::run_and_collect_output(
@@ -1488,7 +1488,7 @@ fn test_complex_permissions_inside_test_dir() {
 }
 
 #[test]
-fn test_complex_permissions_outside_test_and_js_dir() {
+fn test_complex_permissions_rw_outside_test_and_js_dir() {
   const PERMISSION_VARIANTS: [&str; 2] = ["read", "write"];
   let test_dir = util::root_path()
     .join("cli")
@@ -1523,7 +1523,7 @@ fn test_complex_permissions_outside_test_and_js_dir() {
 }
 
 #[test]
-fn test_complex_permissions_inside_test_and_js_dir() {
+fn test_complex_permissions_rw_inside_test_and_js_dir() {
   const PERMISSION_VARIANTS: [&str; 2] = ["read", "write"];
   let test_dir = util::root_path()
     .join("cli")
@@ -1551,7 +1551,7 @@ fn test_complex_permissions_inside_test_and_js_dir() {
 }
 
 #[test]
-fn test_complex_permissions_relative() {
+fn test_complex_permissions_rw_relative() {
   const PERMISSION_VARIANTS: [&str; 2] = ["read", "write"];
   for permission in &PERMISSION_VARIANTS {
     let (_, err, code) = util::run_and_collect_output(
@@ -1568,7 +1568,7 @@ fn test_complex_permissions_relative() {
 }
 
 #[test]
-fn test_complex_permissions_no_prefix() {
+fn test_complex_permissions_rw_no_prefix() {
   const PERMISSION_VARIANTS: [&str; 2] = ["read", "write"];
   for permission in &PERMISSION_VARIANTS {
     let (_, err, code) = util::run_and_collect_output(
@@ -1585,10 +1585,10 @@ fn test_complex_permissions_no_prefix() {
 }
 
 #[test]
-fn test_complex_permissions_net_allow_localhost_4545() {
-  let http_guard = Some(util::http_server());
+fn test_complex_permissions_net_fetch_allow_localhost_4545() {
+  let http_guard = util::http_server();
   let (_, err, code) = util::run_and_collect_output(
-			"run --allow-net=localhost:4545 complex_permissions_test.ts netFetch complex_permissions_test.ts http://localhost:4545/",
+			"run --allow-net=localhost:4545/ complex_permissions_test.ts netFetch complex_permissions_test.ts http://localhost:4545/",
 			None,
 			None,
 		);
@@ -1598,8 +1598,8 @@ fn test_complex_permissions_net_allow_localhost_4545() {
 }
 
 #[test]
-fn test_complex_permissions_net_allow_deno_land() {
-  let http_guard = Some(util::http_server());
+fn test_complex_permissions_net_fetch_allow_deno_land() {
+  let http_guard = util::http_server();
   let (_, err, code) = util::run_and_collect_output(
 			"run --allow-net=deno.land complex_permissions_test.ts netFetch complex_permissions_test.ts http://localhost:4545/",
 			None,
@@ -1611,10 +1611,10 @@ fn test_complex_permissions_net_allow_deno_land() {
 }
 
 #[test]
-fn test_complex_permissions_net_localhost() {
-  let http_guard = Some(util::http_server());
+fn test_complex_permissions_net_fetch_localhost_4545_fail() {
+  let http_guard = util::http_server();
   let (_, err, code) = util::run_and_collect_output(
-			"run --allow-net=localhost complex_permissions_test.ts netFetch complex_permissions_test.ts http://localhost:4545/ http://localhost:4546/ http://localhost:4547/",
+			"run --allow-net=localhost:4545 complex_permissions_test.ts netFetch complex_permissions_test.ts http://localhost:4546/",
 			None,
 			None,
 		);
@@ -1624,16 +1624,68 @@ fn test_complex_permissions_net_localhost() {
 }
 
 #[test]
-fn test_complex_permissions_net_localhost_4545_fail() {
-  let http_guard = Some(util::http_server());
+fn test_complex_permissions_net_fetch_localhost() {
+  let http_guard = util::http_server();
   let (_, err, code) = util::run_and_collect_output(
-			"run --allow-net=localhost:4545 complex_permissions_test.ts netFetch complex_permissions_test.ts http://localhost:4546/",
+			"run --allow-net=localhost complex_permissions_test.ts netFetch complex_permissions_test.ts http://localhost:4545/ http://localhost:4546/ http://localhost:4547/",
+			None,
+			None,
+		);
+  drop(http_guard);
+  assert_eq!(code, 0);
+  assert!(!err.contains(util::PERMISSION_DENIED_PATTERN));
+}
+
+#[test]
+fn test_complex_permissions_net_connect_allow_localhost_ip_4555() {
+  let http_guard = util::http_server();
+  let (_, err, code) = util::run_and_collect_output(
+			"run --allow-net=127.0.0.1:4545 complex_permissions_test.ts netConnect complex_permissions_test.ts 127.0.0.1:4545",
+			None,
+			None,
+		);
+  drop(http_guard);
+  assert_eq!(code, 0);
+  assert!(!err.contains(util::PERMISSION_DENIED_PATTERN));
+}
+
+#[test]
+fn test_complex_permissions_net_connect_allow_deno_land() {
+  let http_guard = util::http_server();
+  let (_, err, code) = util::run_and_collect_output(
+			"run --allow-net=deno.land complex_permissions_test.ts netConnect complex_permissions_test.ts 127.0.0.1:4546",
 			None,
 			None,
 		);
   drop(http_guard);
   assert_eq!(code, 1);
   assert!(err.contains(util::PERMISSION_DENIED_PATTERN));
+}
+
+#[test]
+fn test_complex_permissions_net_connect_allow_localhost_ip_4545_fail() {
+  let http_guard = util::http_server();
+  let (_, err, code) = util::run_and_collect_output(
+			"run --allow-net=127.0.0.1:4545 complex_permissions_test.ts netConnect complex_permissions_test.ts 127.0.0.1:4546",
+			None,
+			None,
+		);
+  drop(http_guard);
+  assert_eq!(code, 1);
+  assert!(err.contains(util::PERMISSION_DENIED_PATTERN));
+}
+
+#[test]
+fn test_complex_permissions_net_connect_allow_localhost_ip() {
+  let http_guard = util::http_server();
+  let (_, err, code) = util::run_and_collect_output(
+			"run --allow-net=127.0.0.1 complex_permissions_test.ts netConnect complex_permissions_test.ts 127.0.0.1:4545 127.0.0.1:4546 127.0.0.1:4547",
+			None,
+			None,
+		);
+  drop(http_guard);
+  assert_eq!(code, 0);
+  assert!(!err.contains(util::PERMISSION_DENIED_PATTERN));
 }
 
 mod util {

@@ -14,18 +14,24 @@ const test: { [key: string]: Function } = {
   netFetch(hosts: string[]): void {
     hosts.forEach(host => fetch(host));
   },
-  netListen(hosts: string[]): void {
-    hosts.forEach(hostname => {
-      const listener = Deno.listen({ transport: "tcp", hostname, port: 4541 });
+  netListen(endpoints: string[]): void {
+    endpoints.forEach(endpoint => {
+      let data = endpoint.split(":");
+      const listener = Deno.listen({
+        transport: "tcp",
+        hostname: data[0],
+        port: parseInt(data[1], 10)
+      });
       listener.close();
     });
   },
-  async netDial(hosts: string[]): Promise<void> {
-    for (const hostname of hosts) {
+  async netConnect(endpoints: string[]): Promise<void> {
+    for (const endpoint of endpoints) {
+      let data = endpoint.split(":");
       const listener = await Deno.connect({
         transport: "tcp",
-        hostname,
-        port: 4541
+        hostname: data[0],
+        port: parseInt(data[1], 10)
       });
       listener.close();
     }
@@ -37,4 +43,4 @@ if (!test[name]) {
   exit(1);
 }
 
-test[name](args.slice(2));
+test[name](args.slice(1));
