@@ -93,6 +93,7 @@ pub enum StreamResource {
   Stderr(tokio::io::Stderr),
   FsFile(tokio::fs::File, FileMetadata),
   TcpStream(tokio::net::TcpStream),
+  UnixStream(tokio::net::UnixStream),
   ServerTlsStream(Box<ServerTlsStream<TcpStream>>),
   ClientTlsStream(Box<ClientTlsStream<TcpStream>>),
   HttpBody(Box<HttpBody>),

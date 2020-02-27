@@ -3,7 +3,7 @@ import { EOF, Reader, Writer, Closer } from "./io.ts";
 import { read, write, close } from "./files.ts";
 import { sendSync, sendAsync } from "./dispatch_json.ts";
 
-export type Transport = "tcp" | "udp";
+export type Transport = "tcp" | "udp" | "unix";
 // TODO support other types:
 // export type Transport = "tcp" | "tcp4" | "tcp6" | "unix" | "unixpacket";
 
@@ -17,6 +17,11 @@ export interface UDPAddr {
   transport?: Transport;
   hostname?: string;
   port: number;
+}
+
+export interface UnixAddr {
+  transport: Transport;
+  address: string;
 }
 
 /** A socket is a generic transport listener for message-oriented protocols */
@@ -265,6 +270,7 @@ export interface ConnectOptions {
   port: number;
   hostname?: string;
   transport?: Transport;
+  address?: string;
 }
 
 const connectDefaults = { hostname: "127.0.0.1", transport: "tcp" };
