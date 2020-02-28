@@ -121,7 +121,10 @@ export class ListenerImpl implements Listener {
   ) {}
 
   async accept(): Promise<Conn> {
-    const res = await sendAsync("op_accept", { rid: this.rid });
+    const res = await sendAsync("op_accept", {
+      rid: this.rid,
+      transport: this.addr.transport
+    });
     return new ConnImpl(res.rid, res.remoteAddr, res.localAddr);
   }
 
@@ -232,6 +235,11 @@ export interface ListenOptions {
   transport?: Transport;
 }
 
+export interface UnixListenOptions {
+  transport: Transport;
+  address: string;
+}
+
 const listenDefaults = { hostname: "0.0.0.0", transport: "tcp" };
 
 /** Listen announces on the local transport address.
@@ -255,11 +263,16 @@ export function listen(
   options: ListenOptions & { transport?: "tcp" }
 ): Listener;
 export function listen(options: ListenOptions & { transport: "udp" }): UDPConn;
-export function listen(options: ListenOptions): Listener | UDPConn {
+export function listen(
+  options: UnixListenOptions & { transport: "unix" }
+): Listener;
+export function listen(
+  options: ListenOptions | UnixListenOptions
+): Listener | UDPConn {
   const args = { ...listenDefaults, ...options };
   const res = sendSync("op_listen", args);
 
-  if (args.transport === "tcp") {
+  if (args.transport === "tcp" || args.transport === "unix") {
     return new ListenerImpl(res.rid, res.localAddr);
   } else {
     return new UDPConnImpl(res.rid, res.localAddr);

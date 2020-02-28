@@ -93,6 +93,7 @@ pub enum StreamResource {
   Stderr(tokio::io::Stderr),
   FsFile(tokio::fs::File, FileMetadata),
   TcpStream(tokio::net::TcpStream),
+  #[cfg(not(windows))]
   UnixStream(tokio::net::UnixStream),
   ServerTlsStream(Box<ServerTlsStream<TcpStream>>),
   ClientTlsStream(Box<ClientTlsStream<TcpStream>>),
@@ -123,6 +124,8 @@ impl DenoAsyncRead for StreamResource {
       FsFile(f, _) => Box::pin(f),
       Stdin(f, _) => Box::pin(f),
       TcpStream(f) => Box::pin(f),
+      #[cfg(not(windows))]
+      UnixStream(f) => Box::pin(f),
       ClientTlsStream(f) => Box::pin(f),
       ServerTlsStream(f) => Box::pin(f),
       ChildStdout(f) => Box::pin(f),
@@ -186,6 +189,8 @@ impl DenoAsyncWrite for StreamResource {
       Stdout(f) => Box::pin(f),
       Stderr(f) => Box::pin(f),
       TcpStream(f) => Box::pin(f),
+      #[cfg(not(windows))]
+      UnixStream(f) => Box::pin(f),
       ClientTlsStream(f) => Box::pin(f),
       ServerTlsStream(f) => Box::pin(f),
       ChildStdin(f) => Box::pin(f),
@@ -203,6 +208,8 @@ impl DenoAsyncWrite for StreamResource {
       Stdout(f) => Box::pin(f),
       Stderr(f) => Box::pin(f),
       TcpStream(f) => Box::pin(f),
+      #[cfg(not(windows))]
+      UnixStream(f) => Box::pin(f),
       ClientTlsStream(f) => Box::pin(f),
       ServerTlsStream(f) => Box::pin(f),
       ChildStdin(f) => Box::pin(f),

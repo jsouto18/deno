@@ -1404,7 +1404,7 @@ declare namespace Deno {
    */
   export function openPlugin(filename: string): Plugin;
 
-  export type Transport = "tcp" | "udp";
+  export type Transport = "tcp" | "udp" | "unix";
 
   export interface Addr {
     transport: Transport;
@@ -1510,6 +1510,11 @@ declare namespace Deno {
     transport?: Transport;
   }
 
+  export interface UnixListenOptions {
+    transport: Transport;
+    address: string;
+  }
+
   /** UNSTABLE: new API
    *
    * Listen announces on the local transport address.
@@ -1537,6 +1542,9 @@ declare namespace Deno {
   export function listen(
     options: ListenOptions & { transport: "udp" }
   ): UDPConn;
+  export function listen(
+    options: UnixListenOptions & { transport: "unix" }
+  ): Listener;
   export function listen(options: ListenOptions): Listener | UDPConn;
 
   export interface ListenTLSOptions {
